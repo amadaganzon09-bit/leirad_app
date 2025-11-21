@@ -434,5 +434,332 @@ export const offlineApi = {
       });
       return { message: 'Budget deleted locally, will sync when online' };
     }
+  },
+
+  // --- GOALS ---
+  getGoals: async (username: string) => {
+    if (checkOnlineStatus()) {
+      try {
+        const goals = await api.getGoals(username);
+        offlineStorage.store(`goals_${username}`, goals);
+        return goals;
+      } catch (error) {
+        const cached = offlineStorage.retrieve(`goals_${username}`);
+        if (cached) return cached;
+        throw error;
+      }
+    } else {
+      const cached = offlineStorage.retrieve(`goals_${username}`);
+      return cached || [];
+    }
+  },
+
+  addGoal: async (username: string, goal: any) => {
+    if (checkOnlineStatus()) {
+      try {
+        const newGoal = await api.addGoal(username, goal);
+        const goals = await offlineApi.getGoals(username);
+        offlineStorage.store(`goals_${username}`, [newGoal, ...goals]);
+        return newGoal;
+      } catch (error) {
+        const newGoal = {
+          id: offlineStorage.generateId(),
+          ...goal,
+          created_at: Date.now()
+        };
+        const goals = await offlineApi.getGoals(username);
+        offlineStorage.store(`goals_${username}`, [newGoal, ...goals]);
+        offlineStorage.storePendingOperation(username, {
+          type: 'add_goal',
+          data: { goal }
+        });
+        return newGoal;
+      }
+    } else {
+      const newGoal = {
+        id: offlineStorage.generateId(),
+        ...goal,
+        created_at: Date.now()
+      };
+      const goals = await offlineApi.getGoals(username);
+      offlineStorage.store(`goals_${username}`, [newGoal, ...goals]);
+      offlineStorage.storePendingOperation(username, {
+        type: 'add_goal',
+        data: { goal }
+      });
+      return newGoal;
+    }
+  },
+
+  updateGoal: async (username: string, id: string, updates: any) => {
+    if (checkOnlineStatus()) {
+      try {
+        await api.updateGoal(id, updates);
+        const goals = await offlineApi.getGoals(username);
+        const updatedGoals = goals.map((goal: any) => 
+          goal.id === id ? { ...goal, ...updates } : goal
+        );
+        offlineStorage.store(`goals_${username}`, updatedGoals);
+        return { message: 'Goal updated successfully' };
+      } catch (error) {
+        const goals = await offlineApi.getGoals(username);
+        const updatedGoals = goals.map((goal: any) => 
+          goal.id === id ? { ...goal, ...updates } : goal
+        );
+        offlineStorage.store(`goals_${username}`, updatedGoals);
+        offlineStorage.storePendingOperation(username, {
+          type: 'update_goal',
+          data: { id, updates }
+        });
+        return { message: 'Goal updated locally, will sync when online' };
+      }
+    } else {
+      const goals = await offlineApi.getGoals(username);
+      const updatedGoals = goals.map((goal: any) => 
+        goal.id === id ? { ...goal, ...updates } : goal
+      );
+      offlineStorage.store(`goals_${username}`, updatedGoals);
+      offlineStorage.storePendingOperation(username, {
+        type: 'update_goal',
+        data: { id, updates }
+      });
+      return { message: 'Goal updated locally, will sync when online' };
+    }
+  },
+
+  deleteGoal: async (username: string, id: string) => {
+    if (checkOnlineStatus()) {
+      try {
+        await api.deleteGoal(id);
+        const goals = await offlineApi.getGoals(username);
+        const updatedGoals = goals.filter((goal: any) => goal.id !== id);
+        offlineStorage.store(`goals_${username}`, updatedGoals);
+        return { message: 'Goal deleted successfully' };
+      } catch (error) {
+        const goals = await offlineApi.getGoals(username);
+        const updatedGoals = goals.filter((goal: any) => goal.id !== id);
+        offlineStorage.store(`goals_${username}`, updatedGoals);
+        offlineStorage.storePendingOperation(username, {
+          type: 'delete_goal',
+          data: { id }
+        });
+        return { message: 'Goal deleted locally, will sync when online' };
+      }
+    } else {
+      const goals = await offlineApi.getGoals(username);
+      const updatedGoals = goals.filter((goal: any) => goal.id !== id);
+      offlineStorage.store(`goals_${username}`, updatedGoals);
+      offlineStorage.storePendingOperation(username, {
+        type: 'delete_goal',
+        data: { id }
+      });
+      return { message: 'Goal deleted locally, will sync when online' };
+    }
+  },
+
+  // --- WALLETS ---
+  getWallets: async (username: string) => {
+    if (checkOnlineStatus()) {
+      try {
+        const wallets = await api.getWallets(username);
+        offlineStorage.store(`wallets_${username}`, wallets);
+        return wallets;
+      } catch (error) {
+        const cached = offlineStorage.retrieve(`wallets_${username}`);
+        if (cached) return cached;
+        throw error;
+      }
+    } else {
+      const cached = offlineStorage.retrieve(`wallets_${username}`);
+      return cached || [];
+    }
+  },
+
+  addWallet: async (username: string, wallet: any) => {
+    if (checkOnlineStatus()) {
+      try {
+        const newWallet = await api.addWallet(username, wallet);
+        const wallets = await offlineApi.getWallets(username);
+        offlineStorage.store(`wallets_${username}`, [newWallet, ...wallets]);
+        return newWallet;
+      } catch (error) {
+        const newWallet = {
+          id: offlineStorage.generateId(),
+          ...wallet,
+          created_at: Date.now()
+        };
+        const wallets = await offlineApi.getWallets(username);
+        offlineStorage.store(`wallets_${username}`, [newWallet, ...wallets]);
+        offlineStorage.storePendingOperation(username, {
+          type: 'add_wallet',
+          data: { wallet }
+        });
+        return newWallet;
+      }
+    } else {
+      const newWallet = {
+        id: offlineStorage.generateId(),
+        ...wallet,
+        created_at: Date.now()
+      };
+      const wallets = await offlineApi.getWallets(username);
+      offlineStorage.store(`wallets_${username}`, [newWallet, ...wallets]);
+      offlineStorage.storePendingOperation(username, {
+        type: 'add_wallet',
+        data: { wallet }
+      });
+      return newWallet;
+    }
+  },
+
+  updateWallet: async (username: string, id: string, updates: any) => {
+    if (checkOnlineStatus()) {
+      try {
+        await api.updateWallet(id, updates);
+        const wallets = await offlineApi.getWallets(username);
+        const updatedWallets = wallets.map((wallet: any) => 
+          wallet.id === id ? { ...wallet, ...updates } : wallet
+        );
+        offlineStorage.store(`wallets_${username}`, updatedWallets);
+        return { message: 'Wallet updated successfully' };
+      } catch (error) {
+        const wallets = await offlineApi.getWallets(username);
+        const updatedWallets = wallets.map((wallet: any) => 
+          wallet.id === id ? { ...wallet, ...updates } : wallet
+        );
+        offlineStorage.store(`wallets_${username}`, updatedWallets);
+        offlineStorage.storePendingOperation(username, {
+          type: 'update_wallet',
+          data: { id, updates }
+        });
+        return { message: 'Wallet updated locally, will sync when online' };
+      }
+    } else {
+      const wallets = await offlineApi.getWallets(username);
+      const updatedWallets = wallets.map((wallet: any) => 
+        wallet.id === id ? { ...wallet, ...updates } : wallet
+      );
+      offlineStorage.store(`wallets_${username}`, updatedWallets);
+      offlineStorage.storePendingOperation(username, {
+        type: 'update_wallet',
+        data: { id, updates }
+      });
+      return { message: 'Wallet updated locally, will sync when online' };
+    }
+  },
+
+  deleteWallet: async (username: string, id: string) => {
+    if (checkOnlineStatus()) {
+      try {
+        await api.deleteWallet(id);
+        const wallets = await offlineApi.getWallets(username);
+        const updatedWallets = wallets.filter((wallet: any) => wallet.id !== id);
+        offlineStorage.store(`wallets_${username}`, updatedWallets);
+        return { message: 'Wallet deleted successfully' };
+      } catch (error) {
+        const wallets = await offlineApi.getWallets(username);
+        const updatedWallets = wallets.filter((wallet: any) => wallet.id !== id);
+        offlineStorage.store(`wallets_${username}`, updatedWallets);
+        offlineStorage.storePendingOperation(username, {
+          type: 'delete_wallet',
+          data: { id }
+        });
+        return { message: 'Wallet deleted locally, will sync when online' };
+      }
+    } else {
+      const wallets = await offlineApi.getWallets(username);
+      const updatedWallets = wallets.filter((wallet: any) => wallet.id !== id);
+      offlineStorage.store(`wallets_${username}`, updatedWallets);
+      offlineStorage.storePendingOperation(username, {
+        type: 'delete_wallet',
+        data: { id }
+      });
+      return { message: 'Wallet deleted locally, will sync when online' };
+    }
+  },
+
+  // --- TRANSACTIONS ---
+  getTransactions: async (username: string) => {
+    if (checkOnlineStatus()) {
+      try {
+        const transactions = await api.getTransactions(username);
+        offlineStorage.store(`transactions_${username}`, transactions);
+        return transactions;
+      } catch (error) {
+        const cached = offlineStorage.retrieve(`transactions_${username}`);
+        if (cached) return cached;
+        throw error;
+      }
+    } else {
+      const cached = offlineStorage.retrieve(`transactions_${username}`);
+      return cached || [];
+    }
+  },
+
+  addTransaction: async (username: string, transaction: any) => {
+    if (checkOnlineStatus()) {
+      try {
+        const newTransaction = await api.addTransaction(username, transaction);
+        const transactions = await offlineApi.getTransactions(username);
+        offlineStorage.store(`transactions_${username}`, [newTransaction, ...transactions]);
+        return newTransaction;
+      } catch (error) {
+        const newTransaction = {
+          id: offlineStorage.generateId(),
+          ...transaction,
+          created_at: Date.now()
+        };
+        const transactions = await offlineApi.getTransactions(username);
+        offlineStorage.store(`transactions_${username}`, [newTransaction, ...transactions]);
+        offlineStorage.storePendingOperation(username, {
+          type: 'add_transaction',
+          data: { transaction }
+        });
+        return newTransaction;
+      }
+    } else {
+      const newTransaction = {
+        id: offlineStorage.generateId(),
+        ...transaction,
+        created_at: Date.now()
+      };
+      const transactions = await offlineApi.getTransactions(username);
+      offlineStorage.store(`transactions_${username}`, [newTransaction, ...transactions]);
+      offlineStorage.storePendingOperation(username, {
+        type: 'add_transaction',
+        data: { transaction }
+      });
+      return newTransaction;
+    }
+  },
+
+  deleteTransaction: async (username: string, id: string) => {
+    if (checkOnlineStatus()) {
+      try {
+        await api.deleteTransaction(id);
+        const transactions = await offlineApi.getTransactions(username);
+        const updatedTransactions = transactions.filter((transaction: any) => transaction.id !== id);
+        offlineStorage.store(`transactions_${username}`, updatedTransactions);
+        return { message: 'Transaction deleted successfully' };
+      } catch (error) {
+        const transactions = await offlineApi.getTransactions(username);
+        const updatedTransactions = transactions.filter((transaction: any) => transaction.id !== id);
+        offlineStorage.store(`transactions_${username}`, updatedTransactions);
+        offlineStorage.storePendingOperation(username, {
+          type: 'delete_transaction',
+          data: { id }
+        });
+        return { message: 'Transaction deleted locally, will sync when online' };
+      }
+    } else {
+      const transactions = await offlineApi.getTransactions(username);
+      const updatedTransactions = transactions.filter((transaction: any) => transaction.id !== id);
+      offlineStorage.store(`transactions_${username}`, updatedTransactions);
+      offlineStorage.storePendingOperation(username, {
+        type: 'delete_transaction',
+        data: { id }
+      });
+      return { message: 'Transaction deleted locally, will sync when online' };
+    }
   }
 };

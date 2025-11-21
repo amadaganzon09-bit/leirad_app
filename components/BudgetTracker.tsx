@@ -145,7 +145,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
         setIsSaving(true);
         try {
             // Convert camelCase to snake_case for database
-            await api.addTransaction(username, {
+            await offlineApi.addTransaction(username, {
                 type: data.type,
                 amount: data.amount,
                 category: data.category,
@@ -161,14 +161,14 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
                 const newBalance = data.type === 'income'
                     ? wallet.balance + data.amount
                     : wallet.balance - data.amount;
-                await api.updateWallet(wallet.id, { balance: newBalance });
+                await offlineApi.updateWallet(username, wallet.id, { balance: newBalance });
             }
 
             // Update budget spent if expense
             if (data.type === 'expense') {
                 const budget = budgets.find(b => b.category === data.category);
                 if (budget) {
-                    await api.updateBudget(budget.id, { spent: budget.spent + data.amount });
+                    await offlineApi.updateBudget(username, budget.id, { spent: budget.spent + data.amount });
                 }
             }
 
@@ -202,7 +202,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
 
         setIsDeleting(true);
         try {
-            await api.deleteTransaction(id);
+            await offlineApi.deleteTransaction(username, id);
 
             // Revert wallet balance
             const wallet = wallets.find(w => w.id === transaction.walletId);
@@ -210,14 +210,14 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
                 const newBalance = transaction.type === 'income'
                     ? wallet.balance - transaction.amount
                     : wallet.balance + transaction.amount;
-                await api.updateWallet(wallet.id, { balance: newBalance });
+                await offlineApi.updateWallet(username, wallet.id, { balance: newBalance });
             }
 
             // Revert budget spent
             if (transaction.type === 'expense') {
                 const budget = budgets.find(b => b.category === transaction.category);
                 if (budget) {
-                    await api.updateBudget(budget.id, { spent: Math.max(0, budget.spent - transaction.amount) });
+                    await offlineApi.updateBudget(username, budget.id, { spent: Math.max(0, budget.spent - transaction.amount) });
                 }
             }
 
@@ -272,7 +272,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
     const handleAddGoal = async (data: any) => {
         setIsSaving(true);
         try {
-            await api.addGoal(username, {
+            await offlineApi.addGoal(username, {
                 name: data.name,
                 target_amount: data.targetAmount,
                 saved_amount: 0,
@@ -294,7 +294,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
 
         try {
             const newSaved = Math.min(goal.savedAmount + amount, goal.targetAmount);
-            await api.updateGoal(goalId, { saved_amount: newSaved });
+            await offlineApi.updateGoal(username, goalId, { saved_amount: newSaved });
 
             if (newSaved === goal.targetAmount) {
                 addToast(`🎉 Goal "${goal.name}" achieved!`, ToastType.SUCCESS);
@@ -325,7 +325,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
 
         setIsDeleting(true);
         try {
-            await api.deleteGoal(id);
+            await offlineApi.deleteGoal(username, id);
             await loadData();
             addToast('Goal deleted', ToastType.SUCCESS);
             setDeleteGoalConfirm({ isOpen: false, goalId: null, goalName: '' });
@@ -340,7 +340,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
         setIsSaving(true);
         try {
             const walletColors = ['bg-indigo-500', 'bg-purple-500', 'bg-pink-500', 'bg-blue-500', 'bg-emerald-500'];
-            await api.addWallet(username, {
+            await offlineApi.addWallet(username, {
                 ...data,
                 color: walletColors[wallets.length % walletColors.length]
             });
@@ -371,7 +371,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
 
         setIsDeleting(true);
         try {
-            await api.deleteWallet(id);
+            await offlineApi.deleteWallet(username, id);
             await loadData();
             addToast('Wallet deleted', ToastType.SUCCESS);
             setDeleteWalletConfirm({ isOpen: false, walletId: null, walletName: '' });
