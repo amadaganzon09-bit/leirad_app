@@ -1,0 +1,5 @@
+{
+  "name": "TaskMaster Modern",
+  "description": "A sleek, responsive, and fully functional Todo List application featuring CRUD operations, local storage persistence, and elegant toast notifications.",
+  "requestFramePermissions": []
+}
