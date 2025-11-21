@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Award, Plus, Trash2, CheckCircle2, Target, Calendar, Edit2, Loader2 } from 'lucide-react';
 import { Goal } from '../../types/budget';
 
@@ -17,6 +17,11 @@ const PaginatedGoalList: React.FC<PaginatedGoalListProps> = ({
     const [contributionAmount, setContributionAmount] = useState<{ [key: string]: string }>({});
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
+
+    // Reset to first page when data changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [goals]);
 
     // Pagination
     const totalPages = Math.ceil(goals.length / itemsPerPage);

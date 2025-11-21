@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Wallet, Trash2, Edit2, Loader2 } from 'lucide-react';
 import { WalletType } from '../../types/budget';
 
@@ -15,6 +15,11 @@ const PaginatedWalletList: React.FC<PaginatedWalletListProps> = ({
 }) => {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
+
+    // Reset to first page when data changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [wallets]);
 
     // Pagination
     const totalPages = Math.ceil(wallets.length / itemsPerPage);

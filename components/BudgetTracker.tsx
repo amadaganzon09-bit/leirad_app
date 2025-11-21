@@ -91,9 +91,9 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
         try {
             const [budgetsData, transactionsData, walletsData, goalsData] = await Promise.all([
                 offlineApi.getBudgets(username),
-                api.getTransactions(username),
-                api.getWallets(username),
-                api.getGoals(username)
+                offlineApi.getTransactions(username),
+                offlineApi.getWallets(username),
+                offlineApi.getGoals(username)
             ]);
 
             setBudgets(budgetsData.map((b: any) => ({
@@ -184,6 +184,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
             addToast('Transaction added successfully', ToastType.SUCCESS);
         } catch (error: any) {
             addToast(error.message || 'Failed to add transaction', ToastType.ERROR);
+            await loadData(); // Ensure data is reloaded even on error
         } finally {
             setIsSaving(false);
         }
@@ -271,6 +272,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
             setEditingTransaction(null);
         } catch (error: any) {
             addToast(error.message || 'Failed to update transaction', ToastType.ERROR);
+            await loadData(); // Ensure data is reloaded even on error
         } finally {
             setIsSaving(false);
             setLoadingTransactionId(null);
@@ -323,6 +325,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
             setDeleteTransactionConfirm({ isOpen: false, transactionId: null, transactionDesc: '' });
         } catch (error: any) {
             addToast(error.message || 'Failed to delete transaction', ToastType.ERROR);
+            await loadData(); // Ensure data is reloaded even on error
         } finally {
             setIsDeleting(false);
             setLoadingTransactionId(null);
@@ -350,6 +353,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
             await loadData();
         } catch (error: any) {
             addToast(error.message || 'Failed to save budget', ToastType.ERROR);
+            await loadData(); // Ensure data is reloaded even on error
         } finally {
             setIsSaving(false);
             if (editingBudget) {
@@ -369,6 +373,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
             setDeleteConfirm({ isOpen: false, budgetId: null, budgetName: '' });
         } catch (error: any) {
             addToast(error.message || 'Failed to delete budget', ToastType.ERROR);
+            await loadData(); // Ensure data is reloaded even on error
         } finally {
             setIsDeleting(false);
             setLoadingBudgetId(null);
@@ -401,6 +406,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
             await loadData();
         } catch (error: any) {
             addToast(error.message || 'Failed to save goal', ToastType.ERROR);
+            await loadData(); // Ensure data is reloaded even on error
         } finally {
             setIsSaving(false);
             if (editingGoal) {
@@ -453,6 +459,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
             setDeleteGoalConfirm({ isOpen: false, goalId: null, goalName: '' });
         } catch (error: any) {
             addToast('Failed to delete goal', ToastType.ERROR);
+            await loadData(); // Ensure data is reloaded even on error
         } finally {
             setIsDeleting(false);
             setLoadingGoalId(null);
@@ -483,6 +490,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
             await loadData();
         } catch (error: any) {
             addToast(error.message || 'Failed to save wallet', ToastType.ERROR);
+            await loadData(); // Ensure data is reloaded even on error
         } finally {
             setIsSaving(false);
             if (editingWallet) {
@@ -516,6 +524,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
             setDeleteWalletConfirm({ isOpen: false, walletId: null, walletName: '' });
         } catch (error: any) {
             addToast('Failed to delete wallet', ToastType.ERROR);
+            await loadData(); // Ensure data is reloaded even on error
         } finally {
             setIsDeleting(false);
             setLoadingWalletId(null);

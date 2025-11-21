@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PieChart, Edit2, Trash2, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { Budget } from '../../types/budget';
 
@@ -15,6 +15,11 @@ const PaginatedBudgetList: React.FC<PaginatedBudgetListProps> = ({
 }) => {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
+
+    // Reset to first page when data changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [budgets]);
 
     // Pagination
     const totalPages = Math.ceil(budgets.length / itemsPerPage);

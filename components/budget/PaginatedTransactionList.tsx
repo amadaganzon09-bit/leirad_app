@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Receipt, Trash2, DollarSign, Edit2, Loader2, Download } from 'lucide-react';
 import { Transaction, WalletType } from '../../types/budget';
 import { CATEGORIES } from '../../constants/budget';
@@ -22,6 +22,11 @@ const PaginatedTransactionList: React.FC<PaginatedTransactionListProps> = ({
     const [currentPage, setCurrentPage] = useState(1);
     const [isExporting, setIsExporting] = useState(false);
     const itemsPerPage = 10;
+
+    // Reset to first page when data changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [transactions]);
 
     const exportToPDF = () => {
         setIsExporting(true);
