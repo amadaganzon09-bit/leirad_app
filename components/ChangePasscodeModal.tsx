@@ -1,9 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
-import { X, KeyRound, Save, ShieldCheck } from 'lucide-react';
+import { X, KeyRound, Save, ShieldCheck, Loader2 } from 'lucide-react';
 import { AddToastFunction, ToastType } from '../types';
 import { api } from '../utils/api';
-import LoadingSpinner from './LoadingSpinner';
 
 interface ChangePasscodeModalProps {
   isOpen: boolean;
@@ -138,7 +136,10 @@ const ChangePasscodeModal: React.FC<ChangePasscodeModalProps> = ({
                 }`}
             >
               {isSubmitting ? (
-                <LoadingSpinner size={20} className="text-white" />
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Updating...</span>
+                </>
               ) : (
                 <>
                   <Save className="w-4 h-4" />

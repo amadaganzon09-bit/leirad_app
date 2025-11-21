@@ -18,7 +18,7 @@ export interface Budget {
     category: string;
     limit: number;
     spent: number;
-    period: 'monthly' | 'weekly';
+    period: 'monthly' | 'weekly' | 'yearly';
     icon: React.ReactNode;
     color: string;
 }

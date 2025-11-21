@@ -1,29 +1,55 @@
-import React, { useState } from 'react';
-import { X, Wallet } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Wallet, Save, Loader2 } from 'lucide-react';
+import { WalletType } from '../../../types/budget';
 import { WALLET_ICONS } from '../../../constants/budget';
 
 interface AddWalletModalProps {
     isOpen: boolean;
     onClose: () => void;
     onAdd: (data: any) => Promise<void>;
+    onEdit?: (data: any) => Promise<void>; // Add onEdit prop
+    editingWallet?: WalletType | null; // Add editingWallet prop
+    isLoading: boolean; // Add isLoading prop
 }
 
 const AddWalletModal: React.FC<AddWalletModalProps> = ({
-    isOpen, onClose, onAdd
+    isOpen, onClose, onAdd, onEdit, editingWallet, isLoading
 }) => {
     const [name, setName] = useState('');
     const [type, setType] = useState<'cash' | 'debit' | 'credit' | 'digital'>('cash');
     const [balance, setBalance] = useState('');
 
+    // Update form fields when editing a wallet
+    useEffect(() => {
+        if (editingWallet) {
+            setName(editingWallet.name);
+            setType(editingWallet.type);
+            setBalance(editingWallet.balance.toString());
+        } else {
+            // Reset form when not editing
+            setName('');
+            setType('cash');
+            setBalance('');
+        }
+    }, [editingWallet, isOpen]);
+
     const handleSubmit = async () => {
         if (!name) return;
 
-        await onAdd({
+        const data = {
             name,
             type,
             balance: balance ? parseFloat(balance) : 0,
-            color: 'bg-indigo-500' // Default color for now
-        });
+            color: editingWallet?.color || 'bg-indigo-500' // Use existing color when editing
+        };
+
+        if (editingWallet && onEdit) {
+            // Editing existing wallet
+            await onEdit({ ...data, id: editingWallet.id });
+        } else {
+            // Adding new wallet
+            await onAdd(data);
+        }
 
         setName('');
         setType('cash');
@@ -41,7 +67,7 @@ const AddWalletModal: React.FC<AddWalletModalProps> = ({
                         <div className="p-2 bg-indigo-100 rounded-xl">
                             <Wallet className="w-5 h-5 text-indigo-600" />
                         </div>
-                        Add New Wallet
+                        {editingWallet ? 'Edit Wallet' : 'Add New Wallet'}
                     </h3>
                     <button
                         onClick={onClose}
@@ -60,6 +86,7 @@ const AddWalletModal: React.FC<AddWalletModalProps> = ({
                             onChange={(e) => setName(e.target.value)}
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
                             placeholder="e.g., Savings Account"
+                            disabled={isLoading}
                         />
                     </div>
 
@@ -70,10 +97,11 @@ const AddWalletModal: React.FC<AddWalletModalProps> = ({
                                 <button
                                     key={t}
                                     onClick={() => setType(t)}
+                                    disabled={!!editingWallet} // Disable type change when editing
                                     className={`p-3 rounded-xl border-2 transition-all capitalize ${type === t
                                         ? 'bg-indigo-600 text-white border-transparent shadow-lg'
                                         : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
-                                        }`}
+                                        } ${!!editingWallet ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >
                                     <div className="flex items-center gap-2 justify-center">
                                         {WALLET_ICONS[t]}
@@ -82,6 +110,9 @@ const AddWalletModal: React.FC<AddWalletModalProps> = ({
                                 </button>
                             ))}
                         </div>
+                        {!!editingWallet && (
+                            <p className="text-xs text-slate-500 mt-2">Wallet type cannot be changed when editing</p>
+                        )}
                     </div>
 
                     <div>
@@ -95,15 +126,27 @@ const AddWalletModal: React.FC<AddWalletModalProps> = ({
                                 onChange={(e) => setBalance(e.target.value)}
                                 className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-lg font-semibold"
                                 placeholder="0.00"
+                                disabled={isLoading}
                             />
                         </div>
                     </div>
 
                     <button
                         onClick={handleSubmit}
-                        className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold shadow-lg transition-all hover:scale-105"
+                        disabled={isLoading}
+                        className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold shadow-lg transition-all hover:scale-105 flex items-center justify-center gap-2"
                     >
-                        Add Wallet
+                        {isLoading ? (
+                            <>
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                <span>{editingWallet ? 'Updating...' : 'Add Wallet'}</span>
+                            </>
+                        ) : (
+                            <>
+                                <Save className="w-5 h-5" />
+                                <span>{editingWallet ? 'Update Wallet' : 'Add Wallet'}</span>
+                            </>
+                        )}
                     </button>
                 </div>
             </div>

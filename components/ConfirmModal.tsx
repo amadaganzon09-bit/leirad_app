@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle, X, Loader2 } from 'lucide-react';
 
 interface ConfirmModalProps {
     isOpen: boolean;
@@ -80,9 +80,16 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                     <button
                         onClick={onConfirm}
                         disabled={isLoading}
-                        className={`flex-1 px-5 py-3 ${colorScheme.button} text-white rounded-xl font-semibold shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`flex-1 px-5 py-3 ${colorScheme.button} text-white rounded-xl font-semibold shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
                     >
-                        {isLoading ? 'Processing...' : confirmText}
+                        {isLoading ? (
+                            <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span>Processing...</span>
+                            </>
+                        ) : (
+                            confirmText
+                        )}
                     </button>
                 </div>
             </div>

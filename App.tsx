@@ -17,7 +17,7 @@ import { Todo, ToastData, ToastType, Priority, Category } from './types';
 import { api } from './utils/api';
 import { offlineApi } from './utils/offlineApi';
 
-const USER_STORAGE_KEY = 'taskmaster-current-user';
+const USER_STORAGE_KEY = 'leiradmaster-current-user';
 
 // Helper component for list sections with cleaner UI
 const TodoSection: React.FC<{
@@ -72,6 +72,9 @@ const App: React.FC = () => {
 
   // Loading State
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isCompletingFocusTask, setIsCompletingFocusTask] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
 
   // Selection State
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -284,10 +287,20 @@ const App: React.FC = () => {
     }
   };
 
-  const confirmComplete = () => {
+  const confirmComplete = async () => {
+    setIsCompleting(true);
     if (completeModal.itemId) {
-      performToggle(completeModal.itemId);
+      // Set loading state for focus mode completion
+      if (focusedTaskId === completeModal.itemId) {
+        setIsCompletingFocusTask(true);
+      }
+      await performToggle(completeModal.itemId);
+      // Reset loading state
+      if (focusedTaskId === completeModal.itemId) {
+        setIsCompletingFocusTask(false);
+      }
     }
+    setIsCompleting(false);
     setCompleteModal({ isOpen: false, itemId: null });
   };
 
@@ -308,6 +321,7 @@ const App: React.FC = () => {
   };
 
   const confirmDelete = async () => {
+    setIsDeleting(true);
     if (deleteModal.type === 'single' && deleteModal.itemId) {
       if (deleteModal.itemId === focusedTaskId) {
         setIsFocusMode(false);
@@ -334,6 +348,7 @@ const App: React.FC = () => {
         addToast("Failed to bulk delete.", ToastType.ERROR);
       }
     }
+    setIsDeleting(false);
     setDeleteModal({ isOpen: false, type: null });
   };
 
@@ -574,9 +589,19 @@ const App: React.FC = () => {
               className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-all group ml-1 ${isFocusMode ? 'bg-slate-800 text-rose-400 border-slate-700 hover:bg-rose-900/20' : 'bg-white text-rose-500 border-slate-200 hover:border-rose-200 hover:bg-rose-50 hover:shadow-md'}`}
               title="Log Out"
             >
-              {isLoggingOut ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogOut className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
-              <span className="hidden md:inline font-medium text-sm">Logout</span>
+              {isLoggingOut ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span className="hidden md:inline font-medium text-sm">Logging out...</span>
+                </>
+              ) : (
+                <>
+                  <LogOut className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  <span className="hidden md:inline font-medium text-sm">Logout</span>
+                </>
+              )}
             </button>
+
           </div>
         </header>
 
@@ -689,10 +714,20 @@ const App: React.FC = () => {
                   <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-slate-700/50">
                     <button
                       onClick={() => toggleTodo(focusedTask.id)}
-                      className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-bold text-lg shadow-lg shadow-indigo-900/50 flex items-center justify-center gap-3 transition-all active:scale-95"
+                      disabled={isCompletingFocusTask}
+                      className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-bold text-lg shadow-lg shadow-indigo-900/50 flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <CheckCircle2 className="w-6 h-6" />
-                      Complete Task
+                      {isCompletingFocusTask ? (
+                        <>
+                          <Loader2 className="w-6 h-6 animate-spin" />
+                          <span>Completing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-6 h-6" />
+                          <span>Complete Task</span>
+                        </>
+                      )}
                     </button>
 
                     <button
@@ -954,6 +989,7 @@ const App: React.FC = () => {
         onCancel={() => setDeleteModal({ isOpen: false, type: null })}
         isDestructive={true}
         confirmLabel="Delete"
+        isLoading={isDeleting}
       />
 
       <Modal
@@ -964,6 +1000,7 @@ const App: React.FC = () => {
         onCancel={() => setCompleteModal({ isOpen: false, itemId: null })}
         isDestructive={false}
         confirmLabel="Complete"
+        isLoading={isCompleting}
       />
 
       <ChangePasscodeModal

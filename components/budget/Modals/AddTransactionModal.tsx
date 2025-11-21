@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { X, ArrowDownRight, ArrowUpRight, Save } from 'lucide-react';
-import { WalletType } from '../../../types/budget';
+import { X, ArrowDownRight, ArrowUpRight, Save, Loader2 } from 'lucide-react';
+import { WalletType, Transaction } from '../../../types/budget';
 import { CATEGORIES } from '../../../constants/budget';
-import LoadingSpinner from '../../LoadingSpinner';
 
 interface AddTransactionModalProps {
     isOpen: boolean;
     onClose: () => void;
     onAdd: (data: any) => Promise<void>;
+    onEdit?: (data: any) => Promise<void>; // Add onEdit prop
     wallets: WalletType[];
     isLoading: boolean;
+    editingTransaction?: Transaction | null; // Add editingTransaction prop
 }
 
 const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
-    isOpen, onClose, onAdd, wallets, isLoading
+    isOpen, onClose, onAdd, onEdit, wallets, isLoading, editingTransaction
 }) => {
     const [type, setType] = useState<'income' | 'expense'>('expense');
     const [amount, setAmount] = useState('');
@@ -21,30 +22,51 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     const [description, setDescription] = useState('');
     const [walletId, setWalletId] = useState('');
 
-    // Update walletId when wallets change or modal opens
+    // Update form fields when editing a transaction
     useEffect(() => {
-        if (wallets.length > 0 && !walletId) {
-            setWalletId(wallets[0].id);
+        if (editingTransaction) {
+            setType(editingTransaction.type as 'income' | 'expense');
+            setAmount(editingTransaction.amount.toString());
+            setCategory(editingTransaction.category);
+            setDescription(editingTransaction.description);
+            setWalletId(editingTransaction.walletId);
+        } else {
+            // Reset form when not editing
+            setType('expense');
+            setAmount('');
+            setCategory('Food');
+            setDescription('');
+            if (wallets.length > 0) {
+                setWalletId(wallets[0].id);
+            }
         }
-    }, [wallets, walletId]);
+    }, [editingTransaction, wallets]);
 
     const handleSubmit = async () => {
         if (!amount || !description || !walletId) return;
 
-        await onAdd({
+        const data = {
             type,
             amount: parseFloat(amount),
             category,
             description,
             walletId,
-            date: new Date().toISOString()
-        });
+            date: editingTransaction ? editingTransaction.date : new Date().toISOString()
+        };
+
+        if (editingTransaction && onEdit) {
+            // Editing existing transaction
+            await onEdit({ ...data, id: editingTransaction.id });
+        } else {
+            // Adding new transaction
+            await onAdd(data);
+        }
 
         // Reset form
+        setType('expense');
         setAmount('');
         setDescription('');
         setCategory('Food');
-        setType('expense');
         onClose();
     };
 
@@ -58,12 +80,12 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                     <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                         <div className={`p-2 ${type === 'income' ? 'bg-emerald-100' : 'bg-rose-100'} rounded-xl`}>
                             {type === 'income' ? (
-                                <ArrowDownRight className="w-5 h-5 text-emerald-600" />
+                                <ArrowUpRight className="w-5 h-5 text-emerald-600" />
                             ) : (
-                                <ArrowUpRight className="w-5 h-5 text-rose-600" />
+                                <ArrowDownRight className="w-5 h-5 text-rose-600" />
                             )}
                         </div>
-                        {type === 'income' ? 'New Income' : 'New Expense'}
+                        {editingTransaction ? 'Edit Transaction' : type === 'income' ? 'New Income' : 'New Expense'}
                     </h3>
                     <button
                         onClick={onClose}
@@ -108,6 +130,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                                 onChange={(e) => setAmount(e.target.value)}
                                 className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-lg font-semibold"
                                 placeholder="0.00"
+                                disabled={isLoading}
                             />
                         </div>
                     </div>
@@ -143,6 +166,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                             onChange={(e) => setDescription(e.target.value)}
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
                             placeholder="What is this for?"
+                            disabled={isLoading}
                         />
                     </div>
 
@@ -153,6 +177,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                             value={walletId}
                             onChange={(e) => setWalletId(e.target.value)}
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none appearance-none"
+                            disabled={isLoading}
                         >
                             {wallets.map(wallet => (
                                 <option key={wallet.id} value={wallet.id}>
@@ -171,11 +196,14 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                             }`}
                     >
                         {isLoading ? (
-                            <LoadingSpinner size={20} />
+                            <>
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                <span>{editingTransaction ? 'Updating...' : 'Save Transaction'}</span>
+                            </>
                         ) : (
                             <>
                                 <Save className="w-5 h-5" />
-                                <span>Save Transaction</span>
+                                <span>{editingTransaction ? 'Update Transaction' : 'Save Transaction'}</span>
                             </>
                         )}
                     </button>

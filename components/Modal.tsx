@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle, X, Loader2 } from 'lucide-react';
 
 interface ModalProps {
   isOpen: boolean;
@@ -9,6 +9,7 @@ interface ModalProps {
   onCancel: () => void;
   confirmLabel?: string;
   isDestructive?: boolean;
+  isLoading?: boolean; // Add isLoading prop
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -19,6 +20,7 @@ const Modal: React.FC<ModalProps> = ({
   onCancel,
   confirmLabel = 'Confirm',
   isDestructive = false,
+  isLoading = false, // Default to false
 }) => {
   if (!isOpen) return null;
 
@@ -42,6 +44,7 @@ const Modal: React.FC<ModalProps> = ({
             <button
               onClick={onCancel}
               className="text-gray-400 hover:text-gray-500 transition-colors p-1 hover:bg-gray-100 rounded-lg"
+              disabled={isLoading}
             >
               <X className="w-5 h-5" />
             </button>
@@ -50,18 +53,27 @@ const Modal: React.FC<ModalProps> = ({
         <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-100">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 transition-colors shadow-sm"
+            disabled={isLoading}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
-            className={`px-4 py-2 text-sm font-medium text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-md transition-all transform active:scale-95 ${isDestructive
+            disabled={isLoading}
+            className={`px-4 py-2 text-sm font-medium text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-md transition-all transform active:scale-95 flex items-center justify-center gap-2 ${isDestructive
                 ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
                 : 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500'
-              }`}
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
           >
-            {confirmLabel}
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Processing...</span>
+              </>
+            ) : (
+              confirmLabel
+            )}
           </button>
         </div>
       </div>

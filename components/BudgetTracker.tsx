@@ -9,13 +9,12 @@ import { Transaction, Budget, Goal, WalletType } from '../types/budget';
 import { CATEGORIES } from '../constants/budget';
 
 // Components
-import LoadingSpinner from './LoadingSpinner';
 import ConfirmModal from './ConfirmModal';
 import BudgetOverview from './budget/BudgetOverview';
-import TransactionList from './budget/TransactionList';
-import BudgetList from './budget/BudgetList';
-import GoalList from './budget/GoalList';
-import WalletList from './budget/WalletList';
+import PaginatedTransactionList from './budget/PaginatedTransactionList';
+import PaginatedBudgetList from './budget/PaginatedBudgetList';
+import PaginatedGoalList from './budget/PaginatedGoalList';
+import PaginatedWalletList from './budget/PaginatedWalletList';
 
 // Modals
 import AddTransactionModal from './budget/Modals/AddTransactionModal';
@@ -41,6 +40,12 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    
+    // Loading states for individual items
+    const [loadingTransactionId, setLoadingTransactionId] = useState<string | null>(null);
+    const [loadingBudgetId, setLoadingBudgetId] = useState<string | null>(null);
+    const [loadingGoalId, setLoadingGoalId] = useState<string | null>(null);
+    const [loadingWalletId, setLoadingWalletId] = useState<string | null>(null);
 
     // Modal States
     const [isAddingTransaction, setIsAddingTransaction] = useState(false);
@@ -50,6 +55,9 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
 
     // Edit States
     const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
+    const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+    const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+    const [editingWallet, setEditingWallet] = useState<WalletType | null>(null);
 
     // Confirmation Modal States
     const [deleteConfirm, setDeleteConfirm] = useState<{
@@ -181,6 +189,94 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
         }
     };
 
+    const handleEditTransaction = async (data: any) => {
+        setIsSaving(true);
+        setLoadingTransactionId(data.id);
+        try {
+            // Get the original transaction to calculate balance differences
+            const originalTransaction = transactions.find(t => t.id === data.id);
+            if (!originalTransaction) {
+                throw new Error('Transaction not found');
+            }
+
+            // Update the transaction
+            await offlineApi.updateTransaction(username, data.id, {
+                type: data.type,
+                amount: data.amount,
+                category: data.category,
+                description: data.description,
+                date: data.date,
+                wallet_id: data.walletId,
+                tags: []
+            });
+
+            // Update wallet balances
+            // Revert original transaction effect
+            const originalWallet = wallets.find(w => w.id === originalTransaction.walletId);
+            if (originalWallet) {
+                const originalBalance = originalTransaction.type === 'income'
+                    ? originalWallet.balance - originalTransaction.amount
+                    : originalWallet.balance + originalTransaction.amount;
+                await offlineApi.updateWallet(username, originalWallet.id, { balance: originalBalance });
+            }
+
+            // Apply new transaction effect
+            const newWallet = wallets.find(w => w.id === data.walletId);
+            if (newWallet) {
+                const newBalance = data.type === 'income'
+                    ? newWallet.balance + data.amount
+                    : newWallet.balance - data.amount;
+                await offlineApi.updateWallet(username, newWallet.id, { balance: newBalance });
+            }
+
+            // Update budget spent if category changed or amount changed
+            if (originalTransaction.type === 'expense' || data.type === 'expense') {
+                // If category changed, update both budgets
+                if (originalTransaction.category !== data.category) {
+                    // Remove from original budget
+                    if (originalTransaction.type === 'expense') {
+                        const originalBudget = budgets.find(b => b.category === originalTransaction.category);
+                        if (originalBudget) {
+                            await offlineApi.updateBudget(username, originalBudget.id, { spent: Math.max(0, originalBudget.spent - originalTransaction.amount) });
+                        }
+                    }
+
+                    // Add to new budget
+                    if (data.type === 'expense') {
+                        const newBudget = budgets.find(b => b.category === data.category);
+                        if (newBudget) {
+                            await offlineApi.updateBudget(username, newBudget.id, { spent: newBudget.spent + data.amount });
+                        }
+                    }
+                } else if (originalTransaction.amount !== data.amount || originalTransaction.type !== data.type) {
+                    // Same category, just update the amount
+                    const budget = budgets.find(b => b.category === data.category);
+                    if (budget) {
+                        let newSpent = budget.spent;
+                        // Remove original amount
+                        if (originalTransaction.type === 'expense') {
+                            newSpent -= originalTransaction.amount;
+                        }
+                        // Add new amount
+                        if (data.type === 'expense') {
+                            newSpent += data.amount;
+                        }
+                        await offlineApi.updateBudget(username, budget.id, { spent: Math.max(0, newSpent) });
+                    }
+                }
+            }
+
+            await loadData();
+            addToast('Transaction updated successfully', ToastType.SUCCESS);
+            setEditingTransaction(null);
+        } catch (error: any) {
+            addToast(error.message || 'Failed to update transaction', ToastType.ERROR);
+        } finally {
+            setIsSaving(false);
+            setLoadingTransactionId(null);
+        }
+    };
+
     const handleDeleteTransaction = async (id: string) => {
         const transaction = transactions.find(t => t.id === id);
         if (!transaction) return;
@@ -201,6 +297,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
         if (!transaction) return;
 
         setIsDeleting(true);
+        setLoadingTransactionId(id);
         try {
             await offlineApi.deleteTransaction(username, id);
 
@@ -228,11 +325,15 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
             addToast(error.message || 'Failed to delete transaction', ToastType.ERROR);
         } finally {
             setIsDeleting(false);
+            setLoadingTransactionId(null);
         }
     };
 
     const handleSaveBudget = async (data: any) => {
         setIsSaving(true);
+        if (editingBudget) {
+            setLoadingBudgetId(editingBudget.id);
+        }
         try {
             if (editingBudget) {
                 await offlineApi.updateBudget(username, editingBudget.id, {
@@ -251,12 +352,16 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
             addToast(error.message || 'Failed to save budget', ToastType.ERROR);
         } finally {
             setIsSaving(false);
+            if (editingBudget) {
+                setLoadingBudgetId(null);
+            }
         }
     };
 
     const handleDeleteBudget = async () => {
         if (!deleteConfirm.budgetId) return;
         setIsDeleting(true);
+        setLoadingBudgetId(deleteConfirm.budgetId);
         try {
             await offlineApi.deleteBudget(username, deleteConfirm.budgetId);
             await loadData();
@@ -266,25 +371,41 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
             addToast(error.message || 'Failed to delete budget', ToastType.ERROR);
         } finally {
             setIsDeleting(false);
+            setLoadingBudgetId(null);
         }
     };
 
     const handleAddGoal = async (data: any) => {
         setIsSaving(true);
+        if (editingGoal) {
+            setLoadingGoalId(editingGoal.id);
+        }
         try {
-            await offlineApi.addGoal(username, {
-                name: data.name,
-                target_amount: data.targetAmount,
-                saved_amount: 0,
-                deadline: data.deadline,
-                color: 'bg-indigo-500'
-            });
+            if (editingGoal) {
+                await offlineApi.updateGoal(username, editingGoal.id, {
+                    name: data.name,
+                    target_amount: data.targetAmount,
+                    deadline: data.deadline
+                });
+                addToast('Goal updated successfully!', ToastType.SUCCESS);
+            } else {
+                await offlineApi.addGoal(username, {
+                    name: data.name,
+                    target_amount: data.targetAmount,
+                    saved_amount: 0,
+                    deadline: data.deadline,
+                    color: 'bg-indigo-500'
+                });
+                addToast('Goal created successfully!', ToastType.SUCCESS);
+            }
             await loadData();
-            addToast('Goal created successfully!', ToastType.SUCCESS);
         } catch (error: any) {
-            addToast(error.message || 'Failed to create goal', ToastType.ERROR);
+            addToast(error.message || 'Failed to save goal', ToastType.ERROR);
         } finally {
             setIsSaving(false);
+            if (editingGoal) {
+                setLoadingGoalId(null);
+            }
         }
     };
 
@@ -324,6 +445,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
         if (!id) return;
 
         setIsDeleting(true);
+        setLoadingGoalId(id);
         try {
             await offlineApi.deleteGoal(username, id);
             await loadData();
@@ -333,23 +455,39 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
             addToast('Failed to delete goal', ToastType.ERROR);
         } finally {
             setIsDeleting(false);
+            setLoadingGoalId(null);
         }
     };
 
     const handleAddWallet = async (data: any) => {
         setIsSaving(true);
+        if (editingWallet) {
+            setLoadingWalletId(editingWallet.id);
+        }
         try {
-            const walletColors = ['bg-indigo-500', 'bg-purple-500', 'bg-pink-500', 'bg-blue-500', 'bg-emerald-500'];
-            await offlineApi.addWallet(username, {
-                ...data,
-                color: walletColors[wallets.length % walletColors.length]
-            });
+            if (editingWallet) {
+                await offlineApi.updateWallet(username, editingWallet.id, {
+                    name: data.name,
+                    type: data.type,
+                    balance: data.balance
+                });
+                addToast('Wallet updated successfully!', ToastType.SUCCESS);
+            } else {
+                const walletColors = ['bg-indigo-500', 'bg-purple-500', 'bg-pink-500', 'bg-blue-500', 'bg-emerald-500'];
+                await offlineApi.addWallet(username, {
+                    ...data,
+                    color: walletColors[wallets.length % walletColors.length]
+                });
+                addToast('Wallet created successfully!', ToastType.SUCCESS);
+            }
             await loadData();
-            addToast('Wallet created successfully!', ToastType.SUCCESS);
         } catch (error: any) {
-            addToast(error.message || 'Failed to create wallet', ToastType.ERROR);
+            addToast(error.message || 'Failed to save wallet', ToastType.ERROR);
         } finally {
             setIsSaving(false);
+            if (editingWallet) {
+                setLoadingWalletId(null);
+            }
         }
     };
 
@@ -370,6 +508,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
         if (!id) return;
 
         setIsDeleting(true);
+        setLoadingWalletId(id);
         try {
             await offlineApi.deleteWallet(username, id);
             await loadData();
@@ -379,6 +518,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
             addToast('Failed to delete wallet', ToastType.ERROR);
         } finally {
             setIsDeleting(false);
+            setLoadingWalletId(null);
         }
     };
 
@@ -442,6 +582,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
                         wallets={wallets}
                         budgets={budgets}
                         goals={goals}
+                        onNavigateToTransactions={() => setActiveTab('transactions')}
                     />
                 )}
 
@@ -456,10 +597,15 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
                                 + Add Transaction
                             </button>
                         </div>
-                        <TransactionList
+                        <PaginatedTransactionList
                             transactions={transactions}
                             wallets={wallets}
                             onDelete={handleDeleteTransaction}
+                            onEdit={(transaction) => {
+                                setEditingTransaction(transaction);
+                                setIsAddingTransaction(true);
+                            }}
+                            loadingTransactionId={loadingTransactionId}
                         />
                     </div>
                 )}
@@ -478,7 +624,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
                                 + Create Budget
                             </button>
                         </div>
-                        <BudgetList
+                        <PaginatedBudgetList
                             budgets={budgets}
                             onEdit={(budget) => {
                                 setEditingBudget(budget);
@@ -489,6 +635,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
                                 setEditingBudget(null);
                                 setIsAddingBudget(true);
                             }}
+                            loadingBudgetId={loadingBudgetId}
                         />
                     </div>
                 )}
@@ -504,11 +651,16 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
                                 + New Goal
                             </button>
                         </div>
-                        <GoalList
+                        <PaginatedGoalList
                             goals={goals}
                             onContribute={handleContributeGoal}
                             onDelete={handleDeleteGoal}
+                            onEdit={(goal) => {
+                                setEditingGoal(goal);
+                                setIsAddingGoal(true);
+                            }}
                             onCreate={() => setIsAddingGoal(true)}
+                            loadingGoalId={loadingGoalId}
                         />
                     </div>
                 )}
@@ -524,10 +676,15 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
                                 + Add Wallet
                             </button>
                         </div>
-                        <WalletList
+                        <PaginatedWalletList
                             wallets={wallets}
                             onDelete={handleDeleteWallet}
+                            onEdit={(wallet) => {
+                                setEditingWallet(wallet);
+                                setIsAddingWallet(true);
+                            }}
                             onCreate={() => setIsAddingWallet(true)}
+                            loadingWalletId={loadingWalletId}
                         />
                     </div>
                 )}
@@ -536,10 +693,15 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
             {/* Modals */}
             <AddTransactionModal
                 isOpen={isAddingTransaction}
-                onClose={() => setIsAddingTransaction(false)}
+                onClose={() => {
+                    setIsAddingTransaction(false);
+                    setEditingTransaction(null);
+                }}
                 onAdd={handleAddTransaction}
+                onEdit={handleEditTransaction}
                 wallets={wallets}
                 isLoading={isSaving}
+                editingTransaction={editingTransaction}
             />
 
             <AddBudgetModal
@@ -555,14 +717,26 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
 
             <AddGoalModal
                 isOpen={isAddingGoal}
-                onClose={() => setIsAddingGoal(false)}
+                onClose={() => {
+                    setIsAddingGoal(false);
+                    setEditingGoal(null);
+                }}
                 onAdd={handleAddGoal}
+                onEdit={handleAddGoal}
+                editingGoal={editingGoal}
+                isLoading={isSaving}
             />
 
             <AddWalletModal
                 isOpen={isAddingWallet}
-                onClose={() => setIsAddingWallet(false)}
+                onClose={() => {
+                    setIsAddingWallet(false);
+                    setEditingWallet(null);
+                }}
                 onAdd={handleAddWallet}
+                onEdit={handleAddWallet}
+                editingWallet={editingWallet}
+                isLoading={isSaving}
             />
 
             <ConfirmModal

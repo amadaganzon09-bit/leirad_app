@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
-import { Award, Plus, Trash2, CheckCircle2, Target, Calendar } from 'lucide-react';
+import { Award, Plus, Trash2, CheckCircle2, Target, Calendar, Edit2, Loader2 } from 'lucide-react';
 import { Goal } from '../../types/budget';
 
 interface GoalListProps {
     goals: Goal[];
     onContribute: (goalId: string, amount: number) => void;
     onDelete: (id: string) => void;
+    onEdit: (goal: Goal) => void;
     onCreate: () => void;
+    loadingGoalId?: string | null; // Add loading state for goal operations
 }
 
 const GoalList: React.FC<GoalListProps> = ({
-    goals, onContribute, onDelete, onCreate
+    goals, onContribute, onDelete, onEdit, onCreate, loadingGoalId
 }) => {
     const [contributionAmount, setContributionAmount] = useState<{ [key: string]: string }>({});
 
@@ -60,13 +62,38 @@ const GoalList: React.FC<GoalListProps> = ({
                                     )}
                                 </div>
                             </div>
-                            <button
-                                onClick={() => onDelete(goal.id)}
-                                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors md:opacity-0 md:group-hover:opacity-100"
-                                title="Delete goal"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </button>
+                            <div className="flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onEdit(goal);
+                                    }}
+                                    disabled={loadingGoalId === goal.id}
+                                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Edit goal"
+                                >
+                                    {loadingGoalId === goal.id ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <Edit2 className="w-4 h-4" />
+                                    )}
+                                </button>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onDelete(goal.id);
+                                    }}
+                                    disabled={loadingGoalId === goal.id}
+                                    className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Delete goal"
+                                >
+                                    {loadingGoalId === goal.id ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <Trash2 className="w-4 h-4" />
+                                    )}
+                                </button>
+                            </div>
                         </div>
 
                         <div className="space-y-3">

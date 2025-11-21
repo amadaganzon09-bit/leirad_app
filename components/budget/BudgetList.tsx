@@ -1,5 +1,5 @@
-import React from 'react';
-import { PieChart, Edit2, Trash2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { PieChart, Edit2, Trash2, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { Budget } from '../../types/budget';
 
 interface BudgetListProps {
@@ -7,10 +7,11 @@ interface BudgetListProps {
     onEdit: (budget: Budget) => void;
     onDelete: (budget: Budget) => void;
     onCreate: () => void;
+    loadingBudgetId?: string | null; // Add loading state for budget operations
 }
 
 const BudgetList: React.FC<BudgetListProps> = ({
-    budgets, onEdit, onDelete, onCreate
+    budgets, onEdit, onDelete, onCreate, loadingBudgetId
 }) => {
     if (budgets.length === 0) {
         return (
@@ -57,18 +58,34 @@ const BudgetList: React.FC<BudgetListProps> = ({
                             </div>
                             <div className="flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                 <button
-                                    onClick={() => onEdit(budget)}
-                                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onEdit(budget);
+                                    }}
+                                    disabled={loadingBudgetId === budget.id}
+                                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     title="Edit budget"
                                 >
-                                    <Edit2 className="w-4 h-4" />
+                                    {loadingBudgetId === budget.id ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <Edit2 className="w-4 h-4" />
+                                    )}
                                 </button>
                                 <button
-                                    onClick={() => onDelete(budget)}
-                                    className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onDelete(budget);
+                                    }}
+                                    disabled={loadingBudgetId === budget.id}
+                                    className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     title="Delete budget"
                                 >
-                                    <Trash2 className="w-4 h-4" />
+                                    {loadingBudgetId === budget.id ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <Trash2 className="w-4 h-4" />
+                                    )}
                                 </button>
                             </div>
                         </div>

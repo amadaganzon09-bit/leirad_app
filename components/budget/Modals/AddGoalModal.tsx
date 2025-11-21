@@ -1,27 +1,53 @@
-import React, { useState } from 'react';
-import { X, Award } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Award, Save, Loader2 } from 'lucide-react';
+import { Goal } from '../../../types/budget';
 
 interface AddGoalModalProps {
     isOpen: boolean;
     onClose: () => void;
     onAdd: (data: any) => Promise<void>;
+    onEdit?: (data: any) => Promise<void>; // Add onEdit prop
+    editingGoal?: Goal | null; // Add editingGoal prop
+    isLoading: boolean; // Add isLoading prop
 }
 
 const AddGoalModal: React.FC<AddGoalModalProps> = ({
-    isOpen, onClose, onAdd
+    isOpen, onClose, onAdd, onEdit, editingGoal, isLoading
 }) => {
     const [name, setName] = useState('');
     const [target, setTarget] = useState('');
     const [deadline, setDeadline] = useState('');
 
+    // Update form fields when editing a goal
+    useEffect(() => {
+        if (editingGoal) {
+            setName(editingGoal.name);
+            setTarget(editingGoal.targetAmount.toString());
+            setDeadline(editingGoal.deadline || '');
+        } else {
+            // Reset form when not editing
+            setName('');
+            setTarget('');
+            setDeadline('');
+        }
+    }, [editingGoal, isOpen]);
+
     const handleSubmit = async () => {
         if (!name || !target) return;
 
-        await onAdd({
+        const data = {
             name,
             targetAmount: parseFloat(target),
             deadline: deadline || undefined
-        });
+        };
+
+        if (editingGoal && onEdit) {
+            // Editing existing goal
+            await onEdit({ ...data, id: editingGoal.id });
+        } else {
+            // Adding new goal
+            await onAdd(data);
+        }
 
         setName('');
         setTarget('');
@@ -39,7 +65,7 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
                         <div className="p-2 bg-indigo-100 rounded-xl">
                             <Award className="w-5 h-5 text-indigo-600" />
                         </div>
-                        Create Savings Goal
+                        {editingGoal ? 'Edit Savings Goal' : 'Create Savings Goal'}
                     </h3>
                     <button
                         onClick={onClose}
@@ -58,6 +84,7 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
                             onChange={(e) => setName(e.target.value)}
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
                             placeholder="e.g., New Laptop"
+                            disabled={isLoading}
                         />
                     </div>
 
@@ -72,6 +99,7 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
                                 onChange={(e) => setTarget(e.target.value)}
                                 className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-lg font-semibold"
                                 placeholder="0.00"
+                                disabled={isLoading}
                             />
                         </div>
                     </div>
@@ -83,14 +111,26 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
                             value={deadline}
                             onChange={(e) => setDeadline(e.target.value)}
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                            disabled={isLoading}
                         />
                     </div>
 
                     <button
                         onClick={handleSubmit}
-                        className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold shadow-lg transition-all hover:scale-105"
+                        disabled={isLoading}
+                        className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold shadow-lg transition-all hover:scale-105 flex items-center justify-center gap-2"
                     >
-                        Create Goal
+                        {isLoading ? (
+                            <>
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                <span>{editingGoal ? 'Updating...' : 'Create Goal'}</span>
+                            </>
+                        ) : (
+                            <>
+                                <Save className="w-5 h-5" />
+                                <span>{editingGoal ? 'Update Goal' : 'Create Goal'}</span>
+                            </>
+                        )}
                     </button>
                 </div>
             </div>

@@ -263,6 +263,16 @@ export const api = {
     return { message: 'Transaction deleted successfully' };
   },
 
+  updateTransaction: async (id: string, updates: any) => {
+    const { error } = await supabase
+      .from('transactions')
+      .update(updates)
+      .eq('id', id);
+
+    if (error) throw new Error(error.message);
+    return { message: 'Transaction updated successfully' };
+  },
+
   // --- WALLETS ---
   getWallets: async (username: string) => {
     const { data, error } = await supabase

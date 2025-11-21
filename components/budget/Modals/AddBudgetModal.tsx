@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, PieChart, Save } from 'lucide-react';
+import { X, PieChart, Save, Loader2 } from 'lucide-react';
 import { CATEGORIES } from '../../../constants/budget';
-import LoadingSpinner from '../../LoadingSpinner';
 import { Budget } from '../../../types/budget';
 
 interface AddBudgetModalProps {
@@ -17,14 +16,17 @@ const AddBudgetModal: React.FC<AddBudgetModalProps> = ({
 }) => {
     const [category, setCategory] = useState('Food');
     const [limit, setLimit] = useState('');
+    const [period, setPeriod] = useState<'weekly' | 'monthly' | 'yearly'>('monthly');
 
     useEffect(() => {
         if (editingBudget) {
             setCategory(editingBudget.category);
             setLimit(editingBudget.limit.toString());
+            setPeriod(editingBudget.period as 'weekly' | 'monthly' | 'yearly');
         } else {
             setCategory('Food');
             setLimit('');
+            setPeriod('monthly');
         }
     }, [editingBudget, isOpen]);
 
@@ -34,7 +36,7 @@ const AddBudgetModal: React.FC<AddBudgetModalProps> = ({
         await onSave({
             category,
             limit: parseFloat(limit),
-            period: 'monthly' // Default to monthly for now
+            period
         });
 
         if (!editingBudget) {
@@ -54,7 +56,7 @@ const AddBudgetModal: React.FC<AddBudgetModalProps> = ({
                         <div className="p-2 bg-indigo-100 rounded-xl">
                             <PieChart className="w-5 h-5 text-indigo-600" />
                         </div>
-                        {editingBudget ? 'Edit Budget' : 'Create Monthly Budget'}
+                        {editingBudget ? 'Edit Budget' : `Create ${period.charAt(0).toUpperCase() + period.slice(1)} Budget`}
                     </h3>
                     <button
                         onClick={onClose}
@@ -91,7 +93,7 @@ const AddBudgetModal: React.FC<AddBudgetModalProps> = ({
                     </div>
 
                     <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">Monthly Limit</label>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">{period.charAt(0).toUpperCase() + period.slice(1)} Limit</label>
                         <div className="relative">
                             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">₱</span>
                             <input
@@ -106,6 +108,40 @@ const AddBudgetModal: React.FC<AddBudgetModalProps> = ({
                         </div>
                     </div>
 
+                    {/* Period Selection */}
+                    <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Period</label>
+                        <div className="grid grid-cols-3 gap-2">
+                            <button
+                                onClick={() => setPeriod('weekly')}
+                                className={`py-2 rounded-xl border transition-all text-center ${period === 'weekly'
+                                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700 font-semibold'
+                                    : 'border-slate-100 hover:border-slate-200 text-slate-600'
+                                    }`}
+                            >
+                                Weekly
+                            </button>
+                            <button
+                                onClick={() => setPeriod('monthly')}
+                                className={`py-2 rounded-xl border transition-all text-center ${period === 'monthly'
+                                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700 font-semibold'
+                                    : 'border-slate-100 hover:border-slate-200 text-slate-600'
+                                    }`}
+                            >
+                                Monthly
+                            </button>
+                            <button
+                                onClick={() => setPeriod('yearly')}
+                                className={`py-2 rounded-xl border transition-all text-center ${period === 'yearly'
+                                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700 font-semibold'
+                                    : 'border-slate-100 hover:border-slate-200 text-slate-600'
+                                    }`}
+                            >
+                                Yearly
+                            </button>
+                        </div>
+                    </div>
+
                     <button
                         onClick={handleSubmit}
                         disabled={isLoading}
@@ -113,7 +149,7 @@ const AddBudgetModal: React.FC<AddBudgetModalProps> = ({
                     >
                         {isLoading ? (
                             <>
-                                <LoadingSpinner size={20} />
+                                <Loader2 className="w-5 h-5 animate-spin" />
                                 <span>{editingBudget ? 'Updating...' : 'Creating...'}</span>
                             </>
                         ) : (

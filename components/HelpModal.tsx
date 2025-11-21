@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, CheckCircle2, Plus, Trash2, Calendar, Settings, MousePointerClick, CheckSquare, Layers } from 'lucide-react';
+import { X, CheckCircle2, Plus, Trash2, Calendar, Settings, MousePointerClick, CheckSquare, Layers, Wallet, Receipt, Target, Award, BarChart3 } from 'lucide-react';
 
 interface HelpModalProps {
   isOpen: boolean;
@@ -18,7 +18,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
       >
         {/* Header */}
         <div className="sticky top-0 z-10 px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white/95 backdrop-blur">
-          <h3 className="text-xl font-bold text-gray-800">How to use TaskMaster</h3>
+          <h3 className="text-xl font-bold text-gray-800">How to use LeiradMaster</h3>
           <button 
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-lg"
@@ -116,6 +116,100 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                         <div>
                             <h5 className="font-semibold text-gray-800">Settings</h5>
                             <p className="text-sm text-gray-500 mt-1">Click the cog icon in the header to change your secure 6-digit passcode.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Section 4: Budget Tracker */}
+            <div className="space-y-4">
+                <h4 className="text-sm font-bold text-indigo-600 uppercase tracking-wider border-b border-gray-100 pb-2">Budget Tracker</h4>
+                
+                <div className="grid sm:grid-cols-2 gap-6">
+                    <div className="flex gap-3">
+                        <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg h-fit">
+                            <Wallet className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h5 className="font-semibold text-gray-800">Wallets</h5>
+                            <p className="text-sm text-gray-500 mt-1">Manage your different wallets (cash, debit, credit, digital) and track their balances.</p>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                        <div className="p-2 bg-blue-50 text-blue-600 rounded-lg h-fit">
+                            <Receipt className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h5 className="font-semibold text-gray-800">Transactions</h5>
+                            <p className="text-sm text-gray-500 mt-1">Add income and expense transactions, categorize them, and view your transaction history.</p>
+                        </div>
+                    </div>
+                    
+                    <div className="flex gap-3">
+                        <div className="p-2 bg-rose-50 text-rose-600 rounded-lg h-fit">
+                            <Target className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h5 className="font-semibold text-gray-800">Budgets</h5>
+                            <p className="text-sm text-gray-500 mt-1">Set monthly budget limits for different categories and track your spending against those limits.</p>
+                        </div>
+                    </div>
+                    
+                    <div className="flex gap-3">
+                        <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg h-fit">
+                            <Award className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h5 className="font-semibold text-gray-800">Savings Goals</h5>
+                            <p className="text-sm text-gray-500 mt-1">Create savings goals with target amounts and deadlines, and track your progress.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Section 5: Budget Management */}
+            <div className="space-y-4">
+                <h4 className="text-sm font-bold text-indigo-600 uppercase tracking-wider border-b border-gray-100 pb-2">Budget Management</h4>
+                
+                <div className="grid sm:grid-cols-2 gap-6">
+                    <div className="flex gap-3">
+                        <div className="p-2 bg-violet-50 text-violet-600 rounded-lg h-fit">
+                            <Plus className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h5 className="font-semibold text-gray-800">Add Items</h5>
+                            <p className="text-sm text-gray-500 mt-1">Use the + buttons in each budget section to add new wallets, transactions, budgets, or goals.</p>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                        <div className="p-2 bg-cyan-50 text-cyan-600 rounded-lg h-fit">
+                            <MousePointerClick className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h5 className="font-semibold text-gray-800">Edit Items</h5>
+                            <p className="text-sm text-gray-500 mt-1">Click the edit icon on any wallet, transaction, budget, or goal to modify its details.</p>
+                        </div>
+                    </div>
+                    
+                    <div className="flex gap-3">
+                        <div className="p-2 bg-red-50 text-red-600 rounded-lg h-fit">
+                            <Trash2 className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h5 className="font-semibold text-gray-800">Delete Items</h5>
+                            <p className="text-sm text-gray-500 mt-1">Click the trash icon to remove any item. You'll be asked to confirm before deletion.</p>
+                        </div>
+                    </div>
+                    
+                    <div className="flex gap-3">
+                        <div className="p-2 bg-amber-50 text-amber-600 rounded-lg h-fit">
+                            <BarChart3 className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h5 className="font-semibold text-gray-800">Overview</h5>
+                            <p className="text-sm text-gray-500 mt-1">View the Overview tab for a comprehensive dashboard of your financial status.</p>
                         </div>
                     </div>
                 </div>

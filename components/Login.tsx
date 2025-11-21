@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
-import { User, ArrowRight, Sparkles, Lock, KeyRound, UserPlus, LogIn } from 'lucide-react';
+import { User, ArrowRight, Sparkles, Lock, KeyRound, UserPlus, LogIn, Loader2 } from 'lucide-react';
 import { AddToastFunction, ToastType } from '../types';
 import Footer from './Footer';
 import { api } from '../utils/api';
-import LoadingSpinner from './LoadingSpinner';
 
 interface LoginProps {
   onLogin: (username: string) => void;
@@ -95,7 +93,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, addToast }) => {
           </h2>
           <p className="text-gray-500">
             {isRegistering
-              ? 'Join TaskMaster to get organized.'
+              ? 'Join LeiradMaster to get organized.'
               : 'Enter your credentials to access your tasks.'}
           </p>
         </div>
@@ -158,7 +156,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, addToast }) => {
           >
             {isLoading ? (
               <div className="flex items-center gap-2">
-                <LoadingSpinner size={20} className="text-white" />
+                <Loader2 className="w-5 h-5 animate-spin" />
                 <span>Processing...</span>
               </div>
             ) : (
@@ -176,7 +174,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, addToast }) => {
 
         <div className="mt-8 pt-6 border-t border-gray-100 text-center">
           <p className="text-sm text-gray-500 mb-3">
-            {isRegistering ? "Already have an account?" : "First time using TaskMaster?"}
+            {isRegistering ? "Already have an account?" : "First time using LeiradMaster?"}
           </p>
           <button
             onClick={() => setIsRegistering(!isRegistering)}

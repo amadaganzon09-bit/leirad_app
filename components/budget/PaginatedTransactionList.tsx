@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Search, Receipt, Trash2, DollarSign, Download, Edit2, Loader2 } from 'lucide-react';
+import { Search, Receipt, Trash2, DollarSign, Edit2, Loader2, Download } from 'lucide-react';
 import { Transaction, WalletType } from '../../types/budget';
 import { CATEGORIES } from '../../constants/budget';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-interface TransactionListProps {
+interface PaginatedTransactionListProps {
     transactions: Transaction[];
     wallets: WalletType[];
     onDelete: (id: string) => void;
@@ -13,7 +13,7 @@ interface TransactionListProps {
     loadingTransactionId?: string | null;
 }
 
-const TransactionList: React.FC<TransactionListProps> = ({
+const PaginatedTransactionList: React.FC<PaginatedTransactionListProps> = ({
     transactions, wallets, onDelete, onEdit, loadingTransactionId
 }) => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -287,7 +287,7 @@ transaction.type === 'income' ? `${transaction.amount.toFixed(2)}` : `${transact
                         {paginatedTransactions.map((transaction, index) => {
                             const categoryInfo = CATEGORIES.find(c => c.name === transaction.category);
                             const wallet = wallets.find(w => w.id === transaction.walletId);
-                            const isLast = index === filteredTransactions.length - 1;
+                            const isLast = index === paginatedTransactions.length - 1;
 
                             return (
                                 <div key={transaction.id} className="relative flex gap-3 pb-4 group">
@@ -371,7 +371,7 @@ transaction.type === 'income' ? `${transaction.amount.toFixed(2)}` : `${transact
                 )}
                 
                 {/* Pagination Controls */}
-                {totalPages > 1 && (
+                {filteredTransactions.length > 0 && (
                     <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                         <button
                             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
@@ -382,12 +382,12 @@ transaction.type === 'income' ? `${transaction.amount.toFixed(2)}` : `${transact
                         </button>
                         
                         <div className="text-sm text-slate-600">
-                            Page {currentPage} of {totalPages}
+                            Page {currentPage} of {totalPages || 1}
                         </div>
                         
                         <button
-                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                            disabled={currentPage === totalPages}
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages || 1))}
+                            disabled={currentPage === (totalPages || 1)}
                             className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Next
@@ -399,4 +399,4 @@ transaction.type === 'income' ? `${transaction.amount.toFixed(2)}` : `${transact
     );
 };
 
-export default TransactionList;
+export default PaginatedTransactionList;

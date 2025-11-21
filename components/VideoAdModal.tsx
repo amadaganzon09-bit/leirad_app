@@ -93,7 +93,7 @@ const VideoAdModal: React.FC<VideoAdModalProps> = ({ isOpen, onClose, addToast }
 
       // 4. Start Generation
       // Prompt designed for an app advertisement
-      const prompt = "A sleek, high-quality cinematic commercial for a modern productivity application called TaskMaster. The video features smooth camera movements, showcasing organization, clarity, and success. Professional lighting, 4k resolution, tech aesthetic.";
+      const prompt = "A sleek, high-quality cinematic commercial for a modern productivity application called LeiradMaster. The video features smooth camera movements, showcasing organization, clarity, and success. Professional lighting, 4k resolution, tech aesthetic.";
 
       let operation = await ai.models.generateVideos({
         model: 'veo-3.1-fast-generate-preview',

@@ -8,17 +8,59 @@ interface BudgetOverviewProps {
     wallets: WalletType[];
     budgets: Budget[];
     goals: Goal[];
+    onNavigateToTransactions?: () => void;
 }
 
 const BudgetOverview: React.FC<BudgetOverviewProps> = ({
-    transactions, wallets, budgets, goals
+    transactions, wallets, budgets, goals, onNavigateToTransactions
 }) => {
+    // Calculate current period totals
     const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
     const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
     const totalBalance = wallets.reduce((sum, w) => sum + w.balance, 0);
 
     // Calculate total savings from goals
     const totalSavings = goals.reduce((sum, g) => sum + g.savedAmount, 0);
+
+    // Calculate previous period totals (last 30 days vs previous 30 days)
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+
+    // Current period transactions (last 30 days)
+    const currentPeriodIncome = transactions
+        .filter(t => t.type === 'income' && new Date(t.date) >= thirtyDaysAgo)
+        .reduce((sum, t) => sum + t.amount, 0);
+    
+    const currentPeriodExpenses = transactions
+        .filter(t => t.type === 'expense' && new Date(t.date) >= thirtyDaysAgo)
+        .reduce((sum, t) => sum + t.amount, 0);
+
+    // Previous period transactions (30-60 days ago)
+    const previousPeriodIncome = transactions
+        .filter(t => t.type === 'income' && 
+                 new Date(t.date) >= sixtyDaysAgo && 
+                 new Date(t.date) < thirtyDaysAgo)
+        .reduce((sum, t) => sum + t.amount, 0);
+    
+    const previousPeriodExpenses = transactions
+        .filter(t => t.type === 'expense' && 
+                 new Date(t.date) >= sixtyDaysAgo && 
+                 new Date(t.date) < thirtyDaysAgo)
+        .reduce((sum, t) => sum + t.amount, 0);
+
+    // Calculate percentage changes
+    const incomeChange = previousPeriodIncome > 0 
+        ? ((currentPeriodIncome - previousPeriodIncome) / previousPeriodIncome) * 100 
+        : 0;
+    
+    const expenseChange = previousPeriodExpenses > 0 
+        ? ((currentPeriodExpenses - previousPeriodExpenses) / previousPeriodExpenses) * 100 
+        : 0;
+
+    // Calculate savings change (simplified - comparing to previous month)
+    // For a more accurate calculation, we would need historical savings data
+    const savingsChange = 0; // Placeholder for now
 
     return (
         <div className="space-y-4">
@@ -37,6 +79,19 @@ const BudgetOverview: React.FC<BudgetOverviewProps> = ({
                         <span className="text-xs font-medium">Income</span>
                     </div>
                     <p className="text-xl font-bold text-slate-800">₱{totalIncome.toFixed(2)}</p>
+                    {previousPeriodIncome > 0 && (
+                        <div className="flex items-center gap-1 mt-1">
+                            <span className={`text-xs font-medium ${incomeChange >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                {incomeChange >= 0 ? (
+                                    <TrendingUp className="w-3 h-3 inline" />
+                                ) : (
+                                    <TrendingDown className="w-3 h-3 inline" />
+                                )}
+                                {Math.abs(incomeChange).toFixed(1)}%
+                            </span>
+                            <span className="text-xs text-slate-500">from last month</span>
+                        </div>
+                    )}
                 </div>
                 <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
                     <div className="flex items-center gap-2 mb-2 text-rose-600">
@@ -44,6 +99,19 @@ const BudgetOverview: React.FC<BudgetOverviewProps> = ({
                         <span className="text-xs font-medium">Expenses</span>
                     </div>
                     <p className="text-xl font-bold text-slate-800">₱{totalExpenses.toFixed(2)}</p>
+                    {previousPeriodExpenses > 0 && (
+                        <div className="flex items-center gap-1 mt-1">
+                            <span className={`text-xs font-medium ${expenseChange >= 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                                {expenseChange >= 0 ? (
+                                    <TrendingUp className="w-3 h-3 inline" />
+                                ) : (
+                                    <TrendingDown className="w-3 h-3 inline" />
+                                )}
+                                {Math.abs(expenseChange).toFixed(1)}%
+                            </span>
+                            <span className="text-xs text-slate-500">from last month</span>
+                        </div>
+                    )}
                 </div>
                 <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
                     <div className="flex items-center gap-2 mb-2 text-blue-600">
@@ -51,6 +119,19 @@ const BudgetOverview: React.FC<BudgetOverviewProps> = ({
                         <span className="text-xs font-medium">Savings</span>
                     </div>
                     <p className="text-xl font-bold text-slate-800">₱{totalSavings.toFixed(2)}</p>
+                    {savingsChange !== 0 && (
+                        <div className="flex items-center gap-1 mt-1">
+                            <span className={`text-xs font-medium ${savingsChange >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                {savingsChange >= 0 ? (
+                                    <TrendingUp className="w-3 h-3 inline" />
+                                ) : (
+                                    <TrendingDown className="w-3 h-3 inline" />
+                                )}
+                                {Math.abs(savingsChange).toFixed(1)}%
+                            </span>
+                            <span className="text-xs text-slate-500">from last month</span>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -107,6 +188,14 @@ const BudgetOverview: React.FC<BudgetOverviewProps> = ({
                             <p className="text-center text-slate-400 text-sm py-4">No recent transactions</p>
                         )}
                     </div>
+                    {transactions.length > 0 && (
+                        <button 
+                            onClick={onNavigateToTransactions}
+                            className="w-full py-2 text-center text-indigo-600 font-semibold text-sm hover:bg-indigo-50 rounded-lg transition-colors"
+                        >
+                            View All Transactions
+                        </button>
+                    )}
                 </div>
 
                 {/* Budget Status */}

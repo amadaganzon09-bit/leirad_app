@@ -6,7 +6,7 @@ import { Todo, Priority, Category } from '../types';
 // Type definitions for offline operations
 type OperationType = 'add_todo' | 'update_todo' | 'delete_todo' | 'bulk_delete' | 'bulk_update' | 
                     'add_budget' | 'update_budget' | 'delete_budget' |
-                    'add_transaction' | 'delete_transaction' |
+                    'add_transaction' | 'update_transaction' | 'delete_transaction' |
                     'add_wallet' | 'update_wallet' | 'delete_wallet' |
                     'add_goal' | 'update_goal' | 'delete_goal';
 
@@ -34,7 +34,7 @@ const checkOnlineStatus = (): boolean => {
 
 // Sync pending operations when coming back online
 const syncPendingOperations = async () => {
-  const user = localStorage.getItem('taskmaster-current-user');
+  const user = localStorage.getItem('leiradmaster-current-user');
   if (!user) return;
 
   const pendingOps = offlineStorage.getPendingOperations(user);
@@ -76,6 +76,8 @@ const processPendingOperation = async (op: PendingOperation, username: string) =
       return await api.deleteBudget(op.data.id);
     case 'add_transaction':
       return await api.addTransaction(username, op.data.transaction);
+    case 'update_transaction':
+      return await api.updateTransaction(op.data.id, op.data.updates);
     case 'delete_transaction':
       return await api.deleteTransaction(op.data.id);
     case 'add_wallet':
@@ -760,6 +762,42 @@ export const offlineApi = {
         data: { id }
       });
       return { message: 'Transaction deleted locally, will sync when online' };
+    }
+  },
+
+  updateTransaction: async (username: string, id: string, updates: any) => {
+    if (checkOnlineStatus()) {
+      try {
+        await api.updateTransaction(id, updates);
+        const transactions = await offlineApi.getTransactions(username);
+        const updatedTransactions = transactions.map((transaction: any) => 
+          transaction.id === id ? { ...transaction, ...updates } : transaction
+        );
+        offlineStorage.store(`transactions_${username}`, updatedTransactions);
+        return { message: 'Transaction updated successfully' };
+      } catch (error) {
+        const transactions = await offlineApi.getTransactions(username);
+        const updatedTransactions = transactions.map((transaction: any) => 
+          transaction.id === id ? { ...transaction, ...updates } : transaction
+        );
+        offlineStorage.store(`transactions_${username}`, updatedTransactions);
+        offlineStorage.storePendingOperation(username, {
+          type: 'update_transaction',
+          data: { id, updates }
+        });
+        return { message: 'Transaction updated locally, will sync when online' };
+      }
+    } else {
+      const transactions = await offlineApi.getTransactions(username);
+      const updatedTransactions = transactions.map((transaction: any) => 
+        transaction.id === id ? { ...transaction, ...updates } : transaction
+      );
+      offlineStorage.store(`transactions_${username}`, updatedTransactions);
+      offlineStorage.storePendingOperation(username, {
+        type: 'update_transaction',
+        data: { id, updates }
+      });
+      return { message: 'Transaction updated locally, will sync when online' };
     }
   }
 };
