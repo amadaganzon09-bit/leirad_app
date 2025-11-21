@@ -15,6 +15,7 @@ import FocusSelectModal from './components/FocusSelectModal';
 import BudgetTracker from './components/BudgetTracker';
 import { Todo, ToastData, ToastType, Priority, Category } from './types';
 import { api } from './utils/api';
+import { offlineApi } from './utils/offlineApi';
 
 const USER_STORAGE_KEY = 'taskmaster-current-user';
 
@@ -124,7 +125,7 @@ const App: React.FC = () => {
 
     const fetchTodos = async () => {
       try {
-        const data = await api.getTodos(user);
+        const data = await offlineApi.getTodos(user);
         setTodos(data);
         checkReminders(data);
       } catch (error) {
@@ -231,7 +232,7 @@ const App: React.FC = () => {
   const addTodo = async (text: string, dueDate?: number, priority: Priority = 'medium', category: Category = 'general') => {
     if (!user) return;
     try {
-      const newTodo = await api.addTodo(user, text, dueDate, priority, category);
+      const newTodo = await offlineApi.addTodo(user, text, dueDate, priority, category);
       setTodos((prev) => [newTodo, ...prev]);
       addToast("Task added successfully!", ToastType.SUCCESS);
       setIsMobileAddOpen(false); // Close mobile modal on success
@@ -256,7 +257,7 @@ const App: React.FC = () => {
     }));
 
     try {
-      await api.updateTodo(id, { completed: newState, completedAt });
+      await offlineApi.updateTodo(user!, id, { completed: newState, completedAt });
       if (newState) {
         addToast("Task completed! Great job!", ToastType.SUCCESS, 2000);
       }
@@ -315,7 +316,7 @@ const App: React.FC = () => {
       }
 
       try {
-        await api.deleteTodo(deleteModal.itemId);
+        await offlineApi.deleteTodo(user!, deleteModal.itemId);
         setTodos((prev) => prev.filter(todo => todo.id !== deleteModal.itemId));
         addToast("Task deleted.", ToastType.INFO);
       } catch (e) {
@@ -325,7 +326,7 @@ const App: React.FC = () => {
     } else if (deleteModal.type === 'bulk') {
       const idsToDelete = Array.from(selectedIds) as string[];
       try {
-        await api.bulkDelete(idsToDelete);
+        await offlineApi.bulkDelete(user!, idsToDelete);
         setTodos(prev => prev.filter(t => !selectedIds.has(t.id)));
         addToast(`Deleted ${selectedIds.size} tasks.`, ToastType.INFO);
         setIsSelectionMode(false);
@@ -338,7 +339,7 @@ const App: React.FC = () => {
 
   const editTodo = async (id: string, newText: string) => {
     try {
-      await api.updateTodo(id, { text: newText });
+      await offlineApi.updateTodo(user!, id, { text: newText });
       setTodos((prev) => prev.map(todo =>
         todo.id === id ? { ...todo, text: newText } : todo
       ));
@@ -376,7 +377,7 @@ const App: React.FC = () => {
     const completedAt = Date.now();
 
     try {
-      await api.bulkUpdate(ids, { completed: true, completedAt });
+      await offlineApi.bulkUpdate(user!, ids, { completed: true, completedAt });
       setTodos(prev => prev.map(t => selectedIds.has(t.id) ? { ...t, completed: true, completedAt } : t));
       addToast(`Marked ${selectedIds.size} tasks as complete.`, ToastType.SUCCESS);
       setIsSelectionMode(false);
@@ -392,7 +393,7 @@ const App: React.FC = () => {
     const ids = Array.from(selectedIds) as string[];
 
     try {
-      await api.bulkUpdate(ids, { dueDate: timestamp });
+      await offlineApi.bulkUpdate(user!, ids, { dueDate: timestamp });
       setTodos(prev => prev.map(t => selectedIds.has(t.id) ? { ...t, dueDate: timestamp } : t));
       addToast(`Updated due date for ${selectedIds.size} tasks.`, ToastType.SUCCESS);
       setIsSelectionMode(false);

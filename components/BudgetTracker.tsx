@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { AddToastFunction, ToastType } from '../types';
 import { api } from '../utils/api';
+import { offlineApi } from '../utils/offlineApi';
 import { Transaction, Budget, Goal, WalletType } from '../types/budget';
 import { CATEGORIES } from '../constants/budget';
 
@@ -81,7 +82,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
         setIsLoading(true);
         try {
             const [budgetsData, transactionsData, walletsData, goalsData] = await Promise.all([
-                api.getBudgets(username),
+                offlineApi.getBudgets(username),
                 api.getTransactions(username),
                 api.getWallets(username),
                 api.getGoals(username)
@@ -234,7 +235,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
         setIsSaving(true);
         try {
             if (editingBudget) {
-                await api.updateBudget(editingBudget.id, {
+                await offlineApi.updateBudget(username, editingBudget.id, {
                     limit_amount: data.limit
                 });
                 addToast('Budget updated successfully!', ToastType.SUCCESS);
@@ -242,7 +243,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
                 if (budgets.find(b => b.category === data.category)) {
                     throw new Error('Budget for this category already exists');
                 }
-                await api.addBudget(username, data.category, data.limit, data.period);
+                await offlineApi.addBudget(username, data.category, data.limit, data.period);
                 addToast('Budget created successfully!', ToastType.SUCCESS);
             }
             await loadData();
@@ -257,7 +258,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({ addToast, username }) => 
         if (!deleteConfirm.budgetId) return;
         setIsDeleting(true);
         try {
-            await api.deleteBudget(deleteConfirm.budgetId);
+            await offlineApi.deleteBudget(username, deleteConfirm.budgetId);
             await loadData();
             addToast('Budget deleted successfully', ToastType.SUCCESS);
             setDeleteConfirm({ isOpen: false, budgetId: null, budgetName: '' });
