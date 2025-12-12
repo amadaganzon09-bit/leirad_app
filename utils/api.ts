@@ -371,7 +371,7 @@ export const api = {
     const name = u.user_metadata && (u.user_metadata.full_name || u.user_metadata.name);
     return (email as string) || (name as string) || null;
   },
-
+  
   ensureUser: async (username: string, provider: string = 'supabase') => {
     const { data: existingUser } = await supabase
       .from('users')
