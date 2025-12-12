@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#3b82f6" />
+  <meta name="description" content="LeiradMaster - Task and Budget Management App" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" href="/favicon.ico" />
+  <title>LeiradMaster</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <script type="importmap" src="/importmap.json"></script>
+
+  <!-- 
+    MAINTENANCE MODE REDIRECT
+    Uncomment the code below to redirect all users to the maintenance page
+    Comment it again to restore normal functionality
+  -->
+  <!-- 
+  <script>
+    // Redirect to maintenance page
+    window.location.href = '/maintenance.html';
+  </script>
+  -->
+  <!-- END MAINTENANCE MODE REDIRECT -->
+
+</head>
+
+<body>
+  <div id="root"></div>
+  <script>
+    document.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.ctrlKey && (e.key === 'u' || e.key === 's' || e.keyCode === 123)) {
+        e.preventDefault();
+      }
+    });
+  </script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+
+</html>
