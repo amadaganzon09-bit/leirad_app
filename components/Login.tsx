@@ -216,5 +216,4 @@ const Login: React.FC<LoginProps> = ({ onLogin, addToast }) => {
     </div>
   );
 };
-
 export default Login;
